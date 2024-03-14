@@ -1,4 +1,4 @@
-name: binaries-nginx-linux
+name: binaries
 on:
   workflow_dispatch
 
@@ -36,7 +36,6 @@ jobs:
     strategy:
       matrix:
         NGINX_VERSION:
-          - 1.22.x
           - 1.24.x
           - 1.25.x
         ARCH:
@@ -88,10 +87,74 @@ jobs:
         with:
           path: artifact/*
 
+  nginx-x86_64-win32:
+    name: nginx-${{ matrix.NGINX_VERSION }}-x86_64-win32
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        NGINX_VERSION:
+          - 1.24.x
+          - 1.25.x
+    steps:
+      - name: Setup MSYS2 and install packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: false
+          install: base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-jq
+
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          path: master
+
+      - name: Download and extract nginx
+        shell: msys2 {0}
+        run: ./master/scripts/fetch-sources -d . nginx/nginx@release-${{ matrix.NGINX_VERSION }}
+
+      - name: Download and extract nginx MSYS2 patches
+        shell: msys2 {0}
+        run: ./master/scripts/fetch-sources -d msys2 "myfreeer/nginx-build-msys2@1.22.0"
+
+      - name: Download and extract nginx modules
+        shell: msys2 {0}
+        run: ./master/scripts/fetch-sources $NGINX_MODULES_WIN32
+
+      - name: Download and extract libraries
+        shell: msys2 {0}
+        run: ./master/scripts/fetch-sources 'openssl@3.1.x' 'pcre@8.x' 'madler/zlib@v1.2.x'
+
+      - name: Apply patches
+        shell: msys2 {0}
+        run: |
+          case "${{ matrix.NGINX_VERSION }}" in
+            1.2[0-2].x)
+              for i in msys2/nginx-*.patch; do
+                patch -p1 < $i
+              done
+            ;;
+            # Other patches are not needed since 1.23.4.
+            *) patch -p1 < msys2/nginx-0007-logs-write-access-log-to-stderr.patch;;
+          esac
+
+      - name: Build nginx
+        shell: msys2 {0}
+        env:
+          NGINX_MODULES: ${{ env.NGINX_MODULES_WIN32 }}
+          # -DFD_SETSIZE=1024 is per official nginx win32 binary.
+          CFLAGS: ${{ env.CFLAGS }} -DFD_SETSIZE=1024
+          LDFLAGS: ${{ env.WIN32_LDFLAGS }}
+        run: ./master/scripts/build-nginx
+
+      - name: Upload nginx binary to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: artifact/*
+
   upload:
     name: Upload binaries
     needs:
       - nginx-multi-linux
+      - nginx-x86_64-win32
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     container:
