@@ -2,8 +2,7 @@
 :toc: macro
 :toc-title:
 // custom
-:npm-name: nginx-binaries
-:gh-name: jirutka/{npm-name}
+:gh-name: common-binaries/nginx
 :alpine-branch: 3.18
 :nginx-docs-uri: http://nginx.org/en/docs/
 
