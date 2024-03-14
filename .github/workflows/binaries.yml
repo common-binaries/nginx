@@ -73,7 +73,7 @@ jobs:
         run: ./master/scripts/fetch-sources nginx/njs@${{ matrix.NJS_VERSION }} $NGINX_MODULES
 
       - name: Install Alpine ${{ env.ALPINE_BRANCH }} for ${{ matrix.ARCH }}
-        uses: jirutka/setup-alpine@v1
+        uses: common-binaries/setup-alpine@v1
         with:
           arch: ${{ matrix.ARCH }}
           branch: ${{ env.ALPINE_BRANCH }}
