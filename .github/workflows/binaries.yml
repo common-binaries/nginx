@@ -36,6 +36,7 @@ jobs:
     strategy:
       matrix:
         NGINX_VERSION:
+          - 1.22.x
           - 1.24.x
           - 1.25.x
         ARCH:
@@ -93,6 +94,7 @@ jobs:
     strategy:
       matrix:
         NGINX_VERSION:
+          - 1.22.x
           - 1.24.x
           - 1.25.x
     steps:
