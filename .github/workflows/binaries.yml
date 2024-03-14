@@ -86,6 +86,7 @@ jobs:
             pcre-dev
             zlib-dev
             zlib-static
+            libxslt
 
       - name: Build nginx
         env:
