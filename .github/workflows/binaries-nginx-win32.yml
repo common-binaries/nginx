@@ -30,70 +30,12 @@ env:
   SKIP_SAME_SOURCES: true
 
 jobs:
-  nginx-multi-linux:
-    name: nginx-${{ matrix.NGINX_VERSION }}-${{ matrix.ARCH }}-linux
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        NGINX_VERSION:
-          - 1.24.x
-          - 1.25.x
-        ARCH:
-          - x86_64
-          - aarch64
-        include:
-          - NJS_VERSION: 0.x.x
-          # Pin older njs version for old stable nginx.
-          - NGINX_VERSION: 1.22.x
-            NJS_VERSION: 0.7.x
-    steps:
-      - name: Checkout master branch
-        uses: actions/checkout@v3
-        with:
-          path: master
-
-      - name: Download and extract nginx
-        run: ./master/scripts/fetch-sources -d . nginx/nginx@release-${{ matrix.NGINX_VERSION }}
-
-      - name: Download and extract nginx modules
-        run: ./master/scripts/fetch-sources nginx/njs@${{ matrix.NJS_VERSION }} $NGINX_MODULES
-
-      - name: Install Alpine ${{ env.ALPINE_BRANCH }} for ${{ matrix.ARCH }}
-        uses: jirutka/setup-alpine@v1
-        with:
-          arch: ${{ matrix.ARCH }}
-          branch: ${{ env.ALPINE_BRANCH }}
-          packages: >
-            build-base
-            jansson-dev
-            jansson-static
-            linux-headers
-            openssl-dev
-            openssl-libs-static
-            pcre-dev
-            zlib-dev
-            zlib-static
-
-      - name: Build nginx
-        env:
-          NGINX_MODULES: nginx/njs ${{ env.NGINX_MODULES }}
-          CFLAGS: ${{ env.CFLAGS }}
-          LDFLAGS: ${{ env.LINUX_LDFLAGS }}
-        run: ./master/scripts/build-nginx
-        shell: alpine.sh {0}
-
-      - name: Upload nginx binary to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          path: artifact/*
-
   nginx-x86_64-win32:
     name: nginx-${{ matrix.NGINX_VERSION }}-x86_64-win32
     runs-on: windows-latest
     strategy:
       matrix:
         NGINX_VERSION:
-          - 1.22.x
           - 1.24.x
           - 1.25.x
     steps:
@@ -154,7 +96,6 @@ jobs:
   upload:
     name: Upload binaries
     needs:
-      - nginx-multi-linux
       - nginx-x86_64-win32
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest

@@ -1,0 +1,221 @@
+name: binaries
+on:
+  workflow_dispatch
+
+env:
+  ALPINE_BRANCH: v3.18
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  JOBS: 3
+  CFLAGS: -Os -fomit-frame-pointer -pipe
+  LINUX_LDFLAGS: -static -Wl,--as-needed -Wl,-Map,linker.map
+  DARWIN_LDFLAGS: -Wl,-map,linker.map
+  WIN32_LDFLAGS: -Wl,--as-needed -Wl,-Map,linker.map
+  # List of extra nginx modules to download.
+  # NOTE: nginx/njs is not defined here, but directly in the jobs.
+  NGINX_MODULES: >-
+    kjdev/nginx-auth-jwt
+    kjdev/nginx-keyval
+    vision5/ngx_devel_kit
+    openresty/echo-nginx-module
+    openresty/headers-more-nginx-module
+    openresty/set-misc-nginx-module
+  # The same as above, but for Windows.
+  # - kjdev/nginx-auth-jwt, kjdev/nginx-keyval: a bit complicated to build (TODO)
+  NGINX_MODULES_WIN32: >-
+    vision5/ngx_devel_kit
+    openresty/echo-nginx-module
+    openresty/headers-more-nginx-module
+    openresty/set-misc-nginx-module
+  # Don't update binaries with unchanged sources.
+  SKIP_SAME_SOURCES: true
+
+jobs:
+  njs-multi-linux:
+    name: njs-${{ matrix.NJS_VERSION }}${{ matrix.VARIANT }}-${{ matrix.ARCH }}-linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        NJS_VERSION:
+          - 0.x.x
+        VARIANT:
+          - '-debug'
+          - ''
+        ARCH:
+          - x86_64
+          - aarch64
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          path: master
+
+      - name: Download and extract njs
+        run: ./master/scripts/fetch-sources -d . nginx/njs@${{ matrix.NJS_VERSION }}
+
+      - name: Install Alpine ${{ env.ALPINE_BRANCH }} for ${{ matrix.ARCH }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.ARCH }}
+          branch: ${{ env.ALPINE_BRANCH }}
+          packages: >
+            build-base
+            libedit-dev
+            libedit-static
+            ncurses-dev
+            ncurses-static
+            openssl-dev
+            openssl-libs-static
+            pcre-dev
+            zlib-static
+
+      - name: Build njs
+        env:
+          VARIANT: ${{ matrix.VARIANT }}
+          CFLAGS: ${{ env.CFLAGS }}
+          LDFLAGS: ${{ env.LINUX_LDFLAGS }}
+        run: ./master/scripts/build-njs
+        shell: alpine.sh {0}
+
+      - name: Upload njs binary to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: artifact/*
+
+  nginx-multi-linux:
+    name: nginx-${{ matrix.NGINX_VERSION }}-${{ matrix.ARCH }}-linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        NGINX_VERSION:
+          - 1.22.x
+          - 1.24.x
+          - 1.25.x
+        ARCH:
+          - x86_64
+          - aarch64
+        include:
+          - NJS_VERSION: 0.x.x
+          # Pin older njs version for old stable nginx.
+          - NGINX_VERSION: 1.22.x
+            NJS_VERSION: 0.7.x
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          path: master
+
+      - name: Download and extract nginx
+        run: ./master/scripts/fetch-sources -d . nginx/nginx@release-${{ matrix.NGINX_VERSION }}
+
+      - name: Download and extract nginx modules
+        run: ./master/scripts/fetch-sources nginx/njs@${{ matrix.NJS_VERSION }} $NGINX_MODULES
+
+      - name: Install Alpine ${{ env.ALPINE_BRANCH }} for ${{ matrix.ARCH }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.ARCH }}
+          branch: ${{ env.ALPINE_BRANCH }}
+          packages: >
+            build-base
+            jansson-dev
+            jansson-static
+            linux-headers
+            openssl-dev
+            openssl-libs-static
+            pcre-dev
+            zlib-dev
+            zlib-static
+
+      - name: Build nginx
+        env:
+          NGINX_MODULES: nginx/njs ${{ env.NGINX_MODULES }}
+          CFLAGS: ${{ env.CFLAGS }}
+          LDFLAGS: ${{ env.LINUX_LDFLAGS }}
+        run: ./master/scripts/build-nginx
+        shell: alpine.sh {0}
+
+      - name: Upload nginx binary to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: artifact/*
+
+  upload:
+    name: Upload binaries
+    needs:
+      - njs-multi-linux
+      - nginx-multi-linux
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    container:
+      image: docker://alpine:3.18
+    steps:
+      - name: Install dependencies
+        run: apk add -U git nodejs tree
+
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          path: master
+
+      - name: Checkout binaries branch
+        uses: actions/checkout@v3
+        with:
+          ref: binaries
+          path: binaries
+
+      - name: Download and unpack all workflow run artifacts
+        uses: actions/download-artifact@v3
+
+      - name: List unpacked artifact files
+        run: ls -lah artifact/
+
+      # XXX: Windows builds of nginx and macOS builds of njs-debug are not reproducible.
+      #  This is a workaround to avoid unnecessary updates of binaries that are built from
+      #  very same sources as the existing (note that we track even used system libs).
+      - name: Move binaries with changed source checksums to the repository
+        if: env.SKIP_SAME_SOURCES == 'true'
+        working-directory: binaries
+        run: |
+          mv ../artifact/*.sources .
+          for name in $(git status --porcelain | cut -c4-); do
+              mv -v ../artifact/${name%.sources}* .
+          done
+
+      - name: Move all binaries to the repository
+        if: env.SKIP_SAME_SOURCES != 'true'
+        run: mv -v artifact/* binaries/
+
+      - name: Generate index.json
+        run: ./master/scripts/generate-index --json binaries/ binaries/index.json
+
+      - name: Generate index.csv
+        run: ./master/scripts/generate-index --csv binaries/ binaries/index.csv
+
+      - name: Generate index.html
+        working-directory: binaries
+        run: tree -hv -H . -o index.html .
+
+      - name: Check if there are any changes
+        id: has_changes
+        working-directory: binaries
+        run: |
+          git status || exit 1
+          test -n "$(git status --porcelain)" && result=yes || result=no
+          echo "result=$result" >> $GITHUB_OUTPUT
+
+      - name: Commit changes
+        if: steps.has_changes.outputs.result == 'yes'
+        working-directory: binaries
+        run: |
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add --all
+          git commit -m "Built from ${{ github.sha }}"
+
+      - name: Push changes back to origin
+        if: steps.has_changes.outputs.result == 'yes'
+        working-directory: binaries
+        run: |
+          # XXX: workaround for https://github.com/orgs/community/discussions/55820
+          git config --global http.version HTTP/1.1
+          git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git binaries
