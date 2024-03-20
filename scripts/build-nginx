@@ -120,8 +120,6 @@ esac
 ./objs/nginx$EXEEXT -V
 
 ls -l
-mkdir conf
-cp nginx.conf conf/
 mkdir bin
 mv objs/nginx$EXEEXT bin/
 
