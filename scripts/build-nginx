@@ -119,11 +119,14 @@ esac
 
 ./objs/nginx$EXEEXT -V
 
-BIN_NAME="nginx-${NGINX_VERSION}-${HOST_ARCH}-${HOST_OS}${EXEEXT}"
+ls -l
+mkdir conf
+cp nginx.conf conf/
+mkdir bin
+mv objs/nginx$EXEEXT bin/
+
+BIN_NAME="nginx-${{ matrix.REDIS_VERSION }}-${HOST_OS}-${{ matrix.ARCH }}.tar.gz"
+tar cvzf $BIN_NAME conf/ bin/
 
 mkdir -p artifact/
-install objs/nginx$EXEEXT artifact/$BIN_NAME
-mv .SOURCES artifact/$BIN_NAME.sources
-
-cd artifact/
-sha1sum $BIN_NAME > $BIN_NAME.sha1
+install $BIN_NAME artifact/$BIN_NAME
