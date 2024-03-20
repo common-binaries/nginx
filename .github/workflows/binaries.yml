@@ -162,12 +162,7 @@ jobs:
       image: docker://alpine:3.18
     steps:
       - name: Install dependencies
-        run: apk add -U git nodejs tree
-
-      - name: Checkout master branch
-        uses: actions/checkout@v3
-        with:
-          path: master
+        run: apk add -U git
 
       - name: Checkout binaries branch
         uses: actions/checkout@v3
@@ -175,38 +170,28 @@ jobs:
           ref: binaries
           path: binaries
 
+      - name: Delete binaries branch
+        working-directory: binaries
+        run: |
+          git checkout --orphan binaries_nouse
+          git branch -d binaries
+          git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git --delete binaries
+          rm -fr *
+
+      - name: Create binaries branch
+        working-directory: binaries
+        run: |
+          git checkout --orphan binaries
+
       - name: Download and unpack all workflow run artifacts
         uses: actions/download-artifact@v3
 
       - name: List unpacked artifact files
         run: ls -lah artifact/
 
-      # XXX: Windows builds of nginx and macOS builds of njs-debug are not reproducible.
-      #  This is a workaround to avoid unnecessary updates of binaries that are built from
-      #  very same sources as the existing (note that we track even used system libs).
-      - name: Move binaries with changed source checksums to the repository
-        if: env.SKIP_SAME_SOURCES == 'true'
-        working-directory: binaries
-        run: |
-          mv ../artifact/*.sources .
-          for name in $(git status --porcelain | cut -c4-); do
-              mv -v ../artifact/${name%.sources}* .
-          done
-
       - name: Move all binaries to the repository
-        if: env.SKIP_SAME_SOURCES != 'true'
         run: mv -v artifact/* binaries/
-
-      - name: Generate index.json
-        run: ./master/scripts/generate-index --json binaries/ binaries/index.json
-
-      - name: Generate index.csv
-        run: ./master/scripts/generate-index --csv binaries/ binaries/index.csv
-
-      - name: Generate index.html
-        working-directory: binaries
-        run: tree -hv -H . -o index.html .
-
+        
       - name: Check if there are any changes
         id: has_changes
         working-directory: binaries
