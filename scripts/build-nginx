@@ -122,9 +122,8 @@ esac
 ls -l
 mkdir bin
 mv objs/nginx$EXEEXT bin/
-
-BIN_NAME="nginx-${{ matrix.REDIS_VERSION }}-${HOST_OS}-${{ matrix.ARCH }}.tar.gz"
+BIN_NAME="nginx-${NGINX_VERSION}-${HOST_OS}-${HOST_ARCH}.tar.gz"
 tar cvzf $BIN_NAME conf/ bin/
 
 mkdir -p artifact/
-install $BIN_NAME artifact/$BIN_NAME
+mv $BIN_NAME artifact/$BIN_NAME
