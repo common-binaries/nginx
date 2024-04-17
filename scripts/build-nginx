@@ -58,11 +58,11 @@ configure() {
 		--with-http_auth_request_module \
 		--with-http_secure_link_module \
 		--with-http_sub_module \
+		--with-http_fastcgi_module \
 		--without-http_ssi_module \
 		--without-http_mirror_module \
 		--without-http_geo_module \
-		--without-http_split_clients_module \
-		--without-http_fastcgi_module \
+		--without-http_split_clients_module \	
 		--without-http_uwsgi_module \
 		--without-http_scgi_module \
 		--without-http_grpc_module \
