@@ -50,6 +50,9 @@ jobs:
       - name: Download and extract nginx
         run: ./master/scripts/fetch-sources -d . nginx/nginx@release-${{ matrix.NGINX_VERSION }}
 
+      - name: Download and extract nginx modules
+        run: ./master/scripts/fetch-sources nginx/njs@${{ matrix.NJS_VERSION }} $NGINX_MODULES
+
       - name: Install Alpine ${{ env.ALPINE_BRANCH }} for ${{ matrix.ARCH }}
         uses: common-binaries/setup-alpine@v1
         with:
