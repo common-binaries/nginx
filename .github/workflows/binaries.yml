@@ -41,11 +41,6 @@ jobs:
         ARCH:
           - x86_64
           - aarch64
-        include:
-          - NJS_VERSION: 0.x.x
-          # Pin older njs version for old stable nginx.
-          - NGINX_VERSION: 1.22.x
-            NJS_VERSION: 0.7.x
     steps:
       - name: Checkout master branch
         uses: actions/checkout@v3
