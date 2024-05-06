@@ -68,7 +68,7 @@ jobs:
 
       - name: Build nginx
         env:
-          NGINX_MODULES: nginx/njs ${{ env.NGINX_MODULES }}
+          NGINX_MODULES: ${{ env.NGINX_MODULES }}
           CFLAGS: ${{ env.CFLAGS }}
           LDFLAGS: ${{ env.LINUX_LDFLAGS }}
         run: ./master/scripts/build-nginx
