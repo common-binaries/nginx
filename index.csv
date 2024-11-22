@@ -1,0 +1,15 @@
+name,version,variant,arch,os,filename,date,size,checksum
+nginx,1.24.0,,aarch64,linux,nginx-1.24.0-aarch64-linux,2024-11-22T01:42:11Z,5425920,sha1:b7fbab0041c8a327172d19ef6024ec27167726c3
+nginx,1.24.0,,arm64,darwin,nginx-1.24.0-arm64-darwin,2024-11-22T01:42:11Z,5806984,sha1:9f3e31d8872ee168693f5e1754525fbf8fad394f
+nginx,1.24.0,,x86_64,linux,nginx-1.24.0-x86_64-linux,2024-11-22T01:42:08Z,6297320,sha1:b98356d323bf5694f43f1a4e6b84dc98f7c8e776
+nginx,1.24.0,,x86_64,win32,nginx-1.24.0-x86_64-win32.exe,2024-11-22T01:42:11Z,4528128,sha1:e2fbc5a26b0ae7dabdf6bcff7f4b10e136be1eed
+nginx,1.26.2,,aarch64,linux,nginx-1.26.2-aarch64-linux,2024-11-22T01:42:08Z,5426104,sha1:5f9084612de905836d9ea202fd4a102331cc9c0b
+nginx,1.26.2,,arm64,darwin,nginx-1.26.2-arm64-darwin,2024-11-22T01:42:11Z,5807176,sha1:17d9730099d8e2a44e9e82c633bfc106dffbbec5
+nginx,1.26.2,,x86_64,linux,nginx-1.26.2-x86_64-linux,2024-11-22T01:42:11Z,6301576,sha1:7247a6c505eda460f34b75948e74e194a4c006ef
+nginx,1.26.2,,x86_64,win32,nginx-1.26.2-x86_64-win32.exe,2024-11-22T01:42:11Z,4530176,sha1:14d192fcdcd436a943d3ac2a2b8ee3aae92003ae
+njs,0.8.7,,aarch64,linux,njs-0.8.7-aarch64-linux,2024-11-22T01:42:11Z,4056624,sha1:04abd8cc231050f6ff518c04f65dcc94572c44d0
+njs,0.8.7,,arm64,darwin,njs-0.8.7-arm64-darwin,2024-11-22T01:42:09Z,4181856,sha1:a77b4567b994da9b6124670dac332ec16fa0c1d1
+njs,0.8.7,debug,aarch64,linux,njs-0.8.7-debug-aarch64-linux,2024-11-22T01:42:11Z,16570328,sha1:440cd4804520d780862e61b271e5d857e8c71eb0
+njs,0.8.7,debug,arm64,darwin,njs-0.8.7-debug-arm64-darwin,2024-11-22T01:42:11Z,4933024,sha1:84c38b4c3a0e1a61b16287f1ff2fbf20c1f2472d
+njs,0.8.7,debug,x86_64,linux,njs-0.8.7-debug-x86_64-linux,2024-11-22T01:42:11Z,16955536,sha1:370956cea520b7305c7fab5960ac81b6d545d012
+njs,0.8.7,,x86_64,linux,njs-0.8.7-x86_64-linux,2024-11-22T01:42:11Z,4874632,sha1:04fb8390baac3ba89dacadda36fcd348741182db
